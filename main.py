@@ -22,10 +22,9 @@ game = Game()
 GAME_UPDATE = pygame.USEREVENT
 pygame.time.set_timer(GAME_UPDATE, 200)
 
-# Variables for smooth movement
 left_pressed = False
 right_pressed = False
-move_delay = 100  # milliseconds
+move_delay = 100
 last_move_time = 0
 
 while True:
@@ -61,11 +60,12 @@ while True:
                 game.rotate()
                 
             if event.key == pygame.K_SPACE and not game.game_over:
-                # Hard drop - move down until it can't move anymore
-                while game.move_down():
+                while True:
+                    if not game.move_down():
+                        game.lock_block()
+                        break
                     game.update_score(0, 1)
-                game.lock_block()
-                
+
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
                 left_pressed = False
@@ -75,7 +75,6 @@ while True:
         if event.type == GAME_UPDATE and not game.game_over:
             game.move_down()
 
-    # Handle continuous movement when keys are held
     if not game.game_over:
         if left_pressed and current_time - last_move_time > move_delay:
             game.move_left()
@@ -85,7 +84,6 @@ while True:
             game.move_right()
             last_move_time = current_time
 
-    # Drawing
     score_value_surface = title_font.render(str(game.score), True, Colors.white)
 
     screen.fill(Colors.dark_blue)
