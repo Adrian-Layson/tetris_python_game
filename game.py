@@ -37,23 +37,27 @@ class Game:
         self.current_block.move(0, -1)
         if not self.block_inside() or not self.block_fits():
             self.current_block.move(0, 1)
+            return False
+        return True
 
     def move_right(self):
         self.current_block.move(0, 1)
         if not self.block_inside() or not self.block_fits():
             self.current_block.move(0, -1)
+            return False
+        return True
 
     def move_down(self):
         self.current_block.move(1, 0)
         if not self.block_inside() or not self.block_fits():
             self.current_block.move(-1, 0)
+            self.lock_block()
             return False
         return True
 
     def hard_drop(self):
         while self.move_down():
             self.update_score(0, 1)
-        self.lock_block()
 
     def lock_block(self):
         tiles = self.current_block.get_cell_positions()

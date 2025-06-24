@@ -53,18 +53,14 @@ while True:
                 last_move_time = current_time
                 
             if event.key == pygame.K_DOWN and not game.game_over:
-                game.move_down()
-                game.update_score(0, 1)
+                if game.move_down():
+                    game.update_score(0, 1)
                 
             if event.key == pygame.K_UP and not game.game_over:
                 game.rotate()
                 
             if event.key == pygame.K_SPACE and not game.game_over:
-                while True:
-                    if not game.move_down():
-                        game.lock_block()
-                        break
-                    game.update_score(0, 1)
+                game.hard_drop()
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
@@ -77,12 +73,16 @@ while True:
 
     if not game.game_over:
         if left_pressed and current_time - last_move_time > move_delay:
-            game.move_left()
-            last_move_time = current_time
-            
+            if game.move_left():
+                last_move_time = current_time
+            else:
+                left_pressed = False
+                
         if right_pressed and current_time - last_move_time > move_delay:
-            game.move_right()
-            last_move_time = current_time
+            if game.move_right():
+                last_move_time = current_time
+            else:
+                right_pressed = False
 
     score_value_surface = title_font.render(str(game.score), True, Colors.white)
 
