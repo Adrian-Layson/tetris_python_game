@@ -1,4 +1,4 @@
-import pygame,sys
+import pygame, sys
 from game import Game
 from colors import Colors
 
@@ -22,42 +22,85 @@ game = Game()
 GAME_UPDATE = pygame.USEREVENT
 pygame.time.set_timer(GAME_UPDATE, 200)
 
+# Variables for smooth movement
+left_pressed = False
+right_pressed = False
+move_delay = 100  # milliseconds
+last_move_time = 0
+
 while True:
-	for event in pygame.event.get():
-		if event.type == pygame.QUIT:
-			pygame.quit()
-			sys.exit()
-		if event.type == pygame.KEYDOWN:
-			if game.game_over == True:
-				game.game_over = False
-				game.reset()
-			if event.key == pygame.K_LEFT and game.game_over == False:
-				game.move_left()
-			if event.key == pygame.K_RIGHT and game.game_over == False:
-				game.move_right()
-			if event.key == pygame.K_DOWN and game.game_over == False:
-				game.move_down()
-				game.update_score(0, 1)
-			if event.key == pygame.K_UP and game.game_over == False:
-				game.rotate()
-		if event.type == GAME_UPDATE and game.game_over == False:
-			game.move_down()
+    current_time = pygame.time.get_ticks()
+    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+            
+        if event.type == pygame.KEYDOWN:
+            if game.game_over:
+                game.game_over = False
+                game.reset()
+                
+            if event.key == pygame.K_LEFT and not game.game_over:
+                game.move_left()
+                left_pressed = True
+                right_pressed = False
+                last_move_time = current_time
+                
+            if event.key == pygame.K_RIGHT and not game.game_over:
+                game.move_right()
+                right_pressed = True
+                left_pressed = False
+                last_move_time = current_time
+                
+            if event.key == pygame.K_DOWN and not game.game_over:
+                game.move_down()
+                game.update_score(0, 1)
+                
+            if event.key == pygame.K_UP and not game.game_over:
+                game.rotate()
+                
+            if event.key == pygame.K_SPACE and not game.game_over:
+                # Hard drop - move down until it can't move anymore
+                while game.move_down():
+                    game.update_score(0, 1)
+                game.lock_block()
+                
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT:
+                left_pressed = False
+            if event.key == pygame.K_RIGHT:
+                right_pressed = False
+                
+        if event.type == GAME_UPDATE and not game.game_over:
+            game.move_down()
 
-	#Drawing
-	score_value_surface = title_font.render(str(game.score), True, Colors.white)
+    # Handle continuous movement when keys are held
+    if not game.game_over:
+        if left_pressed and current_time - last_move_time > move_delay:
+            game.move_left()
+            last_move_time = current_time
+            
+        if right_pressed and current_time - last_move_time > move_delay:
+            game.move_right()
+            last_move_time = current_time
 
-	screen.fill(Colors.dark_blue)
-	screen.blit(score_surface, (365, 20, 50, 50))
-	screen.blit(next_surface, (375, 180, 50, 50))
+    # Drawing
+    score_value_surface = title_font.render(str(game.score), True, Colors.white)
 
-	if game.game_over == True:
-		screen.blit(game_over_surface, (320, 450, 50, 50))
+    screen.fill(Colors.dark_blue)
+    screen.blit(score_surface, (365, 20, 50, 50))
+    screen.blit(next_surface, (375, 180, 50, 50))
 
-	pygame.draw.rect(screen, Colors.light_blue, score_rect, 0, 10)
-	screen.blit(score_value_surface, score_value_surface.get_rect(centerx = score_rect.centerx, 
-		centery = score_rect.centery))
-	pygame.draw.rect(screen, Colors.light_blue, next_rect, 0, 10)
-	game.draw(screen)
+    if game.game_over:
+        screen.blit(game_over_surface, (320, 450, 50, 50))
 
-	pygame.display.update()
-	clock.tick(60)
+    pygame.draw.rect(screen, Colors.light_blue, score_rect, 0, 10)
+    screen.blit(score_value_surface, score_value_surface.get_rect(
+        centerx=score_rect.centerx, 
+        centery=score_rect.centery))
+    pygame.draw.rect(screen, Colors.light_blue, next_rect, 0, 10)
+    game.draw(screen)
+
+    pygame.display.update()
+    clock.tick(60)
